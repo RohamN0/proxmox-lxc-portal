@@ -1,15 +1,15 @@
 package router
 
 import (
+	"log"
 	"os"
 	"proxmox-lxc-portal/internal/database"
 	"proxmox-lxc-portal/internal/handlers"
 	"proxmox-lxc-portal/internal/middleware"
-	"proxmox-lxc-portal/internal/models"
+	"proxmox-lxc-portal/internal/repository"
 	"proxmox-lxc-portal/internal/services"
 	"strconv"
 	"time"
-	"log"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
@@ -24,8 +24,8 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api", logger.New())
 
 	// Auth
-	userRepo := models.NewUserRepository(database.DB)
-	refreshTokenRepo := models.NewRefreshTokenRepository(database.DB)
+	userRepo := repository.NewUserRepository(database.DB)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(database.DB)
 	jwtSecret := os.Getenv("SECRET")
 	if jwtSecret == "" {
 		panic("SECRET environment variable is required")
@@ -63,7 +63,7 @@ func SetupRoutes(app *fiber.App) {
 	// Proxmox
 	proxmoxHandler, err := handlers.NewProxmoxHandler()
 	if err != nil {
-    	log.Fatalf("Failed to initialize Proxmox handler: %v", err)
+		log.Fatalf("Failed to initialize Proxmox handler: %v", err)
 	}
 	proxmox := api.Group("/proxmox")
 	proxmox.Post("/lxc", middleware.Protected(), proxmoxHandler.CreateLXC)
