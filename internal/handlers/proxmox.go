@@ -31,9 +31,9 @@ type LXCRequest struct {
 
 // NewProxmoxHandler creates a handler by reading credentials from environment variables
 func NewProxmoxHandler() (*ProxmoxHandler, error) {
-	config := config.LoadProxmoxConfig()
+	proxmoxConfig := config.LoadProxmoxConfig()
 
-	if config.ApiUrl == "" || config.User == "" || config.Password == "" {
+	if proxmoxConfig.ApiUrl == "" || proxmoxConfig.User == "" || proxmoxConfig.Password == "" {
 		return nil, fmt.Errorf("PROXMOX_API_URL, PROXMOX_USER and PROXMOX_PASSWORD must be set")
 	}
 
@@ -42,13 +42,13 @@ func NewProxmoxHandler() (*ProxmoxHandler, error) {
 
 	// NewClient signature (latest): (url, httpClient, token, tlsConfig, proxy, timeout, debug)
 	// We pass nil httpClient (will use default), empty token (we'll login with user/password), empty proxy
-	client, err := proxmox.NewClient(config.ApiUrl, nil, "", tlsconf, "", 300, false)
+	client, err := proxmox.NewClient(proxmoxConfig.ApiUrl, nil, "", tlsconf, "", 300, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Proxmox client: %w", err)
 	}
 
 	// Login now requires a context (use background)
-	if err := client.Login(context.Background(), config.ApiUrl, config.Password, ""); err != nil {
+	if err := client.Login(context.Background(), proxmoxConfig.ApiUrl, proxmoxConfig.Password, ""); err != nil {
 		return nil, fmt.Errorf("failed to login: %w", err)
 	}
 
