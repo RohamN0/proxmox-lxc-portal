@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"os"
+	"proxmox-lxc-portal/internal/config"
 	"strconv"
 	"strings"
 
@@ -15,9 +15,9 @@ import (
 
 // MikroTikHandler holds the MikroTik API client and configuration
 type MikroTikHandler struct {
-	Address  string
-	User     string
-	Password string
+	Address   string
+	User      string
+	Password  string
 	TLSConfig *tls.Config
 }
 
@@ -53,23 +53,21 @@ type NAT struct {
 
 // NewMikroTikHandler creates a new handler instance with config from env vars
 func NewMikroTikHandler() (*MikroTikHandler, error) {
-	address := os.Getenv("MIKROTIK_ADDRESS")
-	user := os.Getenv("MIKROTIK_USER")
-	password := os.Getenv("MIKROTIK_PASSWORD")
+	mikrotikConfig := config.LoadMikrotikConfig()
 
-	if address == "" || user == "" || password == "" {
+	if mikrotikConfig.Address == "" || mikrotikConfig.User == "" || mikrotikConfig.Password == "" {
 		return nil, fmt.Errorf("MIKROTIK_ADDRESS, MIKROTIK_USER, and MIKROTIK_PASSWORD must be set")
 	}
 
 	// Optional: customize TLS config if needed
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: os.Getenv("MIKROTIK_TLS_SKIP_VERIFY") == "true",
+		InsecureSkipVerify: mikrotikConfig.InsecureSkipVerify,
 	}
 
 	return &MikroTikHandler{
-		Address:   address,
-		User:      user,
-		Password:  password,
+		Address:   mikrotikConfig.Address,
+		User:      mikrotikConfig.User,
+		Password:  mikrotikConfig.Password,
 		TLSConfig: tlsConfig,
 	}, nil
 }
