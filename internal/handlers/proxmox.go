@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
+	"proxmox-lxc-portal/internal/config"
 
 	"github.com/Telmate/proxmox-api-go/proxmox"
 	"github.com/gofiber/fiber/v3"
@@ -31,11 +31,9 @@ type LXCRequest struct {
 
 // NewProxmoxHandler creates a handler by reading credentials from environment variables
 func NewProxmoxHandler() (*ProxmoxHandler, error) {
-	apiUrl := os.Getenv("PROXMOX_API_URL")
-	user := os.Getenv("PROXMOX_USER")
-	password := os.Getenv("PROXMOX_PASSWORD")
+	proxmoxConfig := config.LoadProxmoxConfig()
 
-	if apiUrl == "" || user == "" || password == "" {
+	if proxmoxConfig.ApiUrl == "" || proxmoxConfig.User == "" || proxmoxConfig.Password == "" {
 		return nil, fmt.Errorf("PROXMOX_API_URL, PROXMOX_USER and PROXMOX_PASSWORD must be set")
 	}
 
@@ -44,13 +42,13 @@ func NewProxmoxHandler() (*ProxmoxHandler, error) {
 
 	// NewClient signature (latest): (url, httpClient, token, tlsConfig, proxy, timeout, debug)
 	// We pass nil httpClient (will use default), empty token (we'll login with user/password), empty proxy
-	client, err := proxmox.NewClient(apiUrl, nil, "", tlsconf, "", 300, false)
+	client, err := proxmox.NewClient(proxmoxConfig.ApiUrl, nil, "", tlsconf, "", 300, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Proxmox client: %w", err)
 	}
 
 	// Login now requires a context (use background)
-	if err := client.Login(context.Background(), user, password, ""); err != nil {
+	if err := client.Login(context.Background(), proxmoxConfig.ApiUrl, proxmoxConfig.Password, ""); err != nil {
 		return nil, fmt.Errorf("failed to login: %w", err)
 	}
 
@@ -73,11 +71,11 @@ func (p *ProxmoxHandler) GetResources(c fiber.Ctx) error {
 		})
 	}
 
-	memory := nodeInfo["memory"].(map[string]interface{})
+	memory := nodeInfo["memory"].(map[string]any)
 	ramTotal := memory["total"].(float64)
 	ramUsed := memory["used"].(float64)
 
-	cpuCores := nodeInfo["cpuinfo"].(map[string]interface{})["cpus"].(float64)
+	cpuCores := nodeInfo["cpuinfo"].(map[string]any)["cpus"].(float64)
 	cpuUsage := nodeInfo["cpu"].(float64)
 
 	// Storage
@@ -133,17 +131,17 @@ func (p *ProxmoxHandler) CreateLXC(c fiber.Ctx) error {
 		Memory:     req.RAM,
 		Hostname:   req.Hostname,
 		Password:   req.Password,
-		OnBoot:       true,
+		OnBoot:     true,
 		// Networks field must be a QemuDevices map, not a slice
 		Networks: proxmox.QemuDevices{
-			0: map[string]interface{}{
-				"name":     "eth0",
-				"bridge":   "vmbr0",
-				"ip":       req.IP,
-				"tag": req.VLANID,
+			0: map[string]any{
+				"name":   "eth0",
+				"bridge": "vmbr0",
+				"ip":     req.IP,
+				"tag":    req.VLANID,
 			},
 		},
-		RootFs: map[string]interface{}{
+		RootFs: map[string]any{
 			"storage": req.Storage,
 			"size":    "8G",
 		},

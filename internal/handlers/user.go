@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"proxmox-lxc-portal/internal/models"
+	"proxmox-lxc-portal/internal/repository"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -10,12 +10,12 @@ import (
 
 // UserHandler contains HTTP handlers for users.
 type UserHandler struct {
-	userRepo         *models.UserRepository
-	refreshTokenRepo *models.RefreshTokenRepository
+	userRepo         *repository.UserRepository
+	refreshTokenRepo *repository.RefreshTokenRepository
 }
 
 // NewUserHandler creates a new user handler.
-func NewUserHandler(userRepo *models.UserRepository, refreshTokenRepo *models.RefreshTokenRepository) *UserHandler {
+func NewUserHandler(userRepo *repository.UserRepository, refreshTokenRepo *repository.RefreshTokenRepository) *UserHandler {
 	return &UserHandler{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,

@@ -1,9 +1,10 @@
 package services
 
 import (
-	"proxmox-lxc-portal/internal/models"
 	"errors"
 	"fmt"
+	"proxmox-lxc-portal/internal/models"
+	"proxmox-lxc-portal/internal/repository"
 	"strconv"
 	"time"
 
@@ -20,14 +21,14 @@ var (
 
 // AuthService provides authentication functionality
 type AuthService struct {
-	userRepo         *models.UserRepository
-	refreshTokenRepo *models.RefreshTokenRepository
+	userRepo         *repository.UserRepository
+	refreshTokenRepo *repository.RefreshTokenRepository
 	jwtSecret        []byte
 	accessTokenTTL   time.Duration
 }
 
 // NewAuthService creates a new authentication service
-func NewAuthService(userRepo *models.UserRepository, refreshTokenRepo *models.RefreshTokenRepository, jwtSecret string, accessTokenTTL time.Duration) *AuthService {
+func NewAuthService(userRepo *repository.UserRepository, refreshTokenRepo *repository.RefreshTokenRepository, jwtSecret string, accessTokenTTL time.Duration) *AuthService {
 	if jwtSecret == "" {
 		panic("jwt secret must not be empty")
 	}
