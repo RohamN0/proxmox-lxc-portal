@@ -10,12 +10,12 @@ import (
 
 // UserHandler contains HTTP handlers for users.
 type UserHandler struct {
-	userRepo         *repository.UserRepository
-	refreshTokenRepo *repository.RefreshTokenRepository
+	userRepo         repository.UserRepositoryInterface
+	refreshTokenRepo repository.RefreshTokenRepositoryInterface
 }
 
 // NewUserHandler creates a new user handler.
-func NewUserHandler(userRepo *repository.UserRepository, refreshTokenRepo *repository.RefreshTokenRepository) *UserHandler {
+func NewUserHandler(userRepo repository.UserRepositoryInterface, refreshTokenRepo repository.RefreshTokenRepositoryInterface) *UserHandler {
 	return &UserHandler{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,

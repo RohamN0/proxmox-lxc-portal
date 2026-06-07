@@ -21,14 +21,14 @@ var (
 
 // AuthService provides authentication functionality
 type AuthService struct {
-	userRepo         *repository.UserRepository
-	refreshTokenRepo *repository.RefreshTokenRepository
+	userRepo         repository.UserRepositoryInterface
+	refreshTokenRepo repository.RefreshTokenRepositoryInterface
 	jwtSecret        []byte
 	accessTokenTTL   time.Duration
 }
 
 // NewAuthService creates a new authentication service
-func NewAuthService(userRepo *repository.UserRepository, refreshTokenRepo *repository.RefreshTokenRepository, jwtSecret string, accessTokenTTL time.Duration) *AuthService {
+func NewAuthService(userRepo repository.UserRepositoryInterface, refreshTokenRepo repository.RefreshTokenRepositoryInterface, jwtSecret string, accessTokenTTL time.Duration) *AuthService {
 	if jwtSecret == "" {
 		panic("jwt secret must not be empty")
 	}

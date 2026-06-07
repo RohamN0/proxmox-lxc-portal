@@ -8,13 +8,21 @@ import (
 	"gorm.io/gorm"
 )
 
+// RefreshTokenRepositoryInterface defines the contract for token storage
+type RefreshTokenRepositoryInterface interface {
+	CreateRefreshToken(userId uint, ttl time.Duration) (*models.RefreshToken, error)
+	GetRefreshToken(tokenString string) (*models.RefreshToken, error)
+	RevokeRefreshToken(tokenString string) error
+	RevokeAllUserTokens(userId uint) error
+}
+
 // RefreshTokenRepository handles database operations for refresh tokens
 type RefreshTokenRepository struct {
 	db *gorm.DB
 }
 
 // NewRefreshTokenRepository creates a new refresh token repository
-func NewRefreshTokenRepository(db *gorm.DB) *RefreshTokenRepository {
+func NewRefreshTokenRepository(db *gorm.DB) RefreshTokenRepositoryInterface {
 	return &RefreshTokenRepository{db: db}
 }
 
