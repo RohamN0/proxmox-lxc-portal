@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	"proxmox-lxc-portal/internal/repository"
+	"errors"
+	"proxmox-lxc-portal/internal/services"
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
@@ -10,15 +11,13 @@ import (
 
 // UserHandler contains HTTP handlers for users.
 type UserHandler struct {
-	userRepo         repository.UserRepositoryInterface
-	refreshTokenRepo repository.RefreshTokenRepositoryInterface
+	UserService *services.UserService
 }
 
 // NewUserHandler creates a new user handler.
-func NewUserHandler(userRepo repository.UserRepositoryInterface, refreshTokenRepo repository.RefreshTokenRepositoryInterface) *UserHandler {
+func NewUserHandler(userService *services.UserService) *UserHandler {
 	return &UserHandler{
-		userRepo:         userRepo,
-		refreshTokenRepo: refreshTokenRepo,
+		UserService: userService,
 	}
 }
 
@@ -38,21 +37,16 @@ func parseUserID(c fiber.Ctx) (uint, string, error) {
 	idParam := c.Params("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil || id <= 0 {
-		return 0, "", c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Invalid user ID",
-			"data":    nil,
-		})
+		return 0, "", errors.New("invalid user ID")
 	}
-
-	return uint(id), strconv.Itoa(id), nil
+	return uint(id), idParam, nil
 }
 
 // GetUser get a user
 func (uh *UserHandler) GetUser(c fiber.Ctx) error {
 	id, idString, err := parseUserID(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": err.Error()})
 	}
 
 	tok, ok := c.Locals("user").(*jwt.Token)
@@ -64,11 +58,11 @@ func (uh *UserHandler) GetUser(c fiber.Ctx) error {
 		})
 	}
 
-	user, err := uh.userRepo.GetUserByID(id)
+	user, err := uh.UserService.GetUser(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"status":  "error",
-			"message": "No user found with ID",
+			"message": err.Error(),
 			"data":    nil,
 		})
 	}
@@ -94,7 +88,7 @@ func (uh *UserHandler) UpdateUser(c fiber.Ctx) error {
 
 	id, idString, err := parseUserID(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": err.Error()})
 	}
 
 	tok, ok := c.Locals("user").(*jwt.Token)
@@ -106,7 +100,7 @@ func (uh *UserHandler) UpdateUser(c fiber.Ctx) error {
 		})
 	}
 
-	updatedUser, err := uh.userRepo.UpdateNames(id, input.Names)
+	updatedUser, err := uh.UserService.UpdateNames(id, input.Names)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
@@ -126,7 +120,7 @@ func (uh *UserHandler) UpdateUser(c fiber.Ctx) error {
 func (uh *UserHandler) DeleteUser(c fiber.Ctx) error {
 	id, idString, err := parseUserID(c)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": err.Error()})
 	}
 
 	tok, ok := c.Locals("user").(*jwt.Token)
@@ -138,15 +132,7 @@ func (uh *UserHandler) DeleteUser(c fiber.Ctx) error {
 		})
 	}
 
-	if err := uh.refreshTokenRepo.RevokeAllUserTokens(id); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to revoke user tokens",
-			"data":    nil,
-		})
-	}
-
-	err = uh.userRepo.DeleteUser(id)
+	err = uh.UserService.DeleteUser(id)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"status":  "error",

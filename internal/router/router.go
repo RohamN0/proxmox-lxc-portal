@@ -46,7 +46,8 @@ func SetupRoutes(app *fiber.App) {
 	auth.Post("/refresh-token", authHandler.RefreshToken)
 
 	// User
-	userHandler := handlers.NewUserHandler(userRepo, refreshTokenRepo)
+	userService := services.NewUserService(userRepo, refreshTokenRepo)
+	userHandler := handlers.NewUserHandler(userService)
 	user := api.Group("/users")
 	user.Get("/:id", middleware.Protected(), userHandler.GetUser)
 	user.Patch("/:id", middleware.Protected(), userHandler.UpdateUser)
