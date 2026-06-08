@@ -46,11 +46,11 @@ type RefreshResponse struct {
 
 // AuthHandler contains HTTP handlers for authentication
 type AuthHandler struct {
-	authService *services.AuthService
+	authService services.AuthServiceInterface
 }
 
 // NewAuthHandler creates a new auth handler
-func NewAuthHandler(authService *services.AuthService) *AuthHandler {
+func NewAuthHandler(authService services.AuthServiceInterface) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 	}

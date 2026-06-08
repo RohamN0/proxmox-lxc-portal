@@ -6,12 +6,18 @@ import (
 	"proxmox-lxc-portal/internal/repository"
 )
 
+type UserServiceInterface interface {
+	GetUser(uint) (*models.User, error)
+	UpdateNames(uint, string) (*models.User, error)
+	DeleteUser(uint) error
+}
+
 type UserService struct {
 	UserRepo         repository.UserRepositoryInterface
 	RefreshTokenRepo repository.RefreshTokenRepositoryInterface
 }
 
-func NewUserService(userRepo repository.UserRepositoryInterface, refreshRepo repository.RefreshTokenRepositoryInterface) *UserService {
+func NewUserService(userRepo repository.UserRepositoryInterface, refreshRepo repository.RefreshTokenRepositoryInterface) UserServiceInterface {
 	return &UserService{
 		UserRepo:         userRepo,
 		RefreshTokenRepo: refreshRepo,

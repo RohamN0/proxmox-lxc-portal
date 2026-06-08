@@ -12,12 +12,14 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrExpiredToken       = errors.New("token has expired")
-	ErrEmailInUse         = errors.New("email already in use")
-)
+type AuthServiceInterface interface {
+	GetUserByEmail(email string) (*models.User, error)
+	Register(email, username, password string) (*models.User, error)
+	ValidateToken(tokenString string) (jwt.MapClaims, error)
+	LoginWithRefresh(email, password string, refreshTokenTTL time.Duration) (accessToken string, refreshToken string, err error)
+	RefreshAccessToken(refreshTokenString string) (accessToken string, refreshToken string, err error)
+	RevokeAllUserRefreshTokens(userID uint) error
+}
 
 // AuthService provides authentication functionality
 type AuthService struct {
@@ -28,7 +30,7 @@ type AuthService struct {
 }
 
 // NewAuthService creates a new authentication service
-func NewAuthService(userRepo repository.UserRepositoryInterface, refreshTokenRepo repository.RefreshTokenRepositoryInterface, jwtSecret string, accessTokenTTL time.Duration) *AuthService {
+func NewAuthService(userRepo repository.UserRepositoryInterface, refreshTokenRepo repository.RefreshTokenRepositoryInterface, jwtSecret string, accessTokenTTL time.Duration) AuthServiceInterface {
 	if jwtSecret == "" {
 		panic("jwt secret must not be empty")
 	}
@@ -104,7 +106,7 @@ func (s *AuthService) generateAccessToken(user *models.User) (string, error) {
 // ValidateToken verifies a JWT token and returns the claims
 func (s *AuthService) ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	// Parse the token
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		// Validate the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
